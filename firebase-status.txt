@@ -1,0 +1,2 @@
+Firebase project configured: gestor-divida-pessoal
+Cloud integration pending service activation and rules deployment.
