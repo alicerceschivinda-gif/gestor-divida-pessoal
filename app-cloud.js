@@ -6,6 +6,16 @@ const KEY='gdp_v1';
 const DATA_VERSION='realdata_2026_07_v1';
 const cfg=window.FIREBASE_CONFIG||{};
 const configured=cfg.apiKey&&cfg.apiKey!=='COLE_AQUI';
+
+// Forçar a camada QR actualizada, evitando reutilização do script antigo em cache.
+if(!document.querySelector('script[data-qr-runtime]')){
+  const qrRuntime=document.createElement('script');
+  qrRuntime.src='qr-validation.js?v=20260705-3';
+  qrRuntime.dataset.qrRuntime='1';
+  qrRuntime.defer=true;
+  document.body.appendChild(qrRuntime);
+}
+
 const badge=document.createElement('button');
 badge.id='cloudStatus';
 badge.textContent=configured?'Ligar à nuvem':'Modo local';
