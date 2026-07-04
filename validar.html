@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1f4b99">
+  <title>Validação de Comprovativo</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#172033;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{width:100%;max-width:620px;background:#fff;border:1px solid #e4e7ec;border-radius:18px;padding:24px;box-shadow:0 14px 34px rgba(16,24,40,.10)}
+    h1{margin:0 0 8px;font-size:1.45rem}
+    .sub{color:#667085;margin:0 0 20px}
+    .status{padding:14px;border-radius:12px;margin:18px 0;font-weight:800}
+    .loading{background:#eef4ff;color:#1f4b99}
+    .valid{background:#e7f6ec;color:#18794e}
+    .invalid{background:#fee4e2;color:#b42318}
+    .warning{background:#fff4e5;color:#b54708}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+    .item{border:1px solid #e4e7ec;border-radius:12px;padding:12px}
+    .label{font-size:.78rem;color:#667085;margin-bottom:5px}
+    .value{font-weight:800;word-break:break-word}
+    .code{font-family:monospace;background:#f2f4f7;padding:10px;border-radius:9px;word-break:break-all;margin-top:14px}
+    .foot{margin-top:20px;color:#667085;font-size:.85rem;line-height:1.5}
+    @media(max-width:600px){.grid{grid-template-columns:1fr}.card{padding:18px}}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Validação de Comprovativo</h1>
+    <p class="sub">Consulta pública da autenticidade do registo de pagamento.</p>
+    <div id="status" class="status loading">A validar o comprovativo…</div>
+    <div id="details" hidden>
+      <div class="grid">
+        <div class="item"><div class="label">Estado</div><div class="value" id="vStatus">—</div></div>
+        <div class="item"><div class="label">Data do pagamento</div><div class="value" id="vDate">—</div></div>
+        <div class="item"><div class="label">Valor</div><div class="value" id="vAmount">—</div></div>
+        <div class="item"><div class="label">Prestação</div><div class="value" id="vInstallment">—</div></div>
+      </div>
+      <div class="code" id="vCode">—</div>
+    </div>
+    <p class="foot">Esta página apresenta apenas os dados mínimos necessários para confirmar a autenticidade do comprovativo. Não permite acesso ao painel privado, à dívida total, ao plano de pagamentos ou ao histórico completo.</p>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js';
+
+    const statusBox = document.querySelector('#status');
+    const details = document.querySelector('#details');
+    const params = new URLSearchParams(location.search);
+    const code = (params.get('codigo') || '').trim();
+
+    function money(n){
+      return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'AOA',maximumFractionDigits:2})
+        .format(Number(n||0)).replace('AOA','Kz');
+    }
+
+    function formatDate(d){
+      if(!d) return '—';
+      return new Date(d+'T00:00:00').toLocaleDateString('pt-PT');
+    }
+
+    if(!code){
+      statusBox.className='status invalid';
+      statusBox.textContent='Código de validação em falta.';
+    } else {
+      try {
+        const app = initializeApp(window.FIREBASE_CONFIG || {});
+        const db = getFirestore(app);
+        const snap = await getDoc(doc(db,'publicReceipts',code));
+        if(!snap.exists()){
+          statusBox.className='status invalid';
+          statusBox.textContent='COMPROVATIVO NÃO ENCONTRADO';
+        } else {
+          const p = snap.data();
+          const state = String(p.status || 'VALIDO').toUpperCase();
+          statusBox.className = state === 'VALIDO' ? 'status valid' : 'status warning';
+          statusBox.textContent = state === 'VALIDO' ? 'COMPROVATIVO VÁLIDO' : `COMPROVATIVO ${state}`;
+          document.querySelector('#vStatus').textContent = state;
+          document.querySelector('#vDate').textContent = formatDate(p.date);
+          document.querySelector('#vAmount').textContent = money(p.amount);
+          document.querySelector('#vInstallment').textContent = p.installment === 'Inicial' ? 'Pagamento inicial' : `${p.installment}.ª prestação`;
+          document.querySelector('#vCode').textContent = `Código: ${p.code || code}`;
+          details.hidden = false;
+        }
+      } catch (e) {
+        console.error(e);
+        statusBox.className='status warning';
+        statusBox.textContent='Não foi possível consultar a base de validação neste momento.';
+      }
+    }
+  </script>
+</body>
+</html>
