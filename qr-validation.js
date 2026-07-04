@@ -1,7 +1,7 @@
 (() => {
   const KEY = 'gdp_v1';
   const QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  const BASE_URL = 'https://alicerceschivinda-gif.github.io/gestor-divida-pessoal/';
+  const VALIDATION_PAGE = 'https://alicerceschivinda-gif.github.io/gestor-divida-pessoal/validar.html';
 
   function loadQRLib() {
     if (window.QRCode) return Promise.resolve();
@@ -39,7 +39,7 @@
   }
 
   function validationUrl(code) {
-    return `${BASE_URL}#validate=${encodeURIComponent(code)}`;
+    return `${VALIDATION_PAGE}?codigo=${encodeURIComponent(code)}`;
   }
 
   async function appendQRToReceipt() {
@@ -63,7 +63,7 @@
     const url = validationUrl(payment.code);
     info.innerHTML = `
       <h3 style="margin:0 0 8px">Validação do comprovativo</h3>
-      <p style="margin:4px 0">Leia o QR Code com a câmara do telemóvel para confirmar a autenticidade deste registo.</p>
+      <p style="margin:4px 0">Leia o QR Code com a câmara do telemóvel para abrir exclusivamente a página pública de validação deste comprovativo.</p>
       <p style="margin:8px 0"><b>Código:</b> <span style="font-family:monospace">${payment.code}</span></p>
       <p style="margin:4px 0;font-size:.82rem;word-break:break-all">${url}</p>
     `;
