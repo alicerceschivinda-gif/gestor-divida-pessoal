@@ -1,4 +1,4 @@
-name: Ligar Firebase ao index
+name: Ligar Firebase e QR ao index
 on:
   push:
     branches: [main]
@@ -11,16 +11,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inserir scripts Firebase
+      - name: Inserir scripts da aplicação
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          marker = '<!-- FIREBASE_CLOUD_LAYER -->'
+          marker = '<!-- APP_INTEGRATION_LAYER -->'
           if marker not in s:
-              inject = '''\n<!-- FIREBASE_CLOUD_LAYER -->\n<script src="firebase-config.js"></script>\n<script type="module" src="app-cloud.js"></script>\n'''
-              s = s.replace('</body>', inject + '</body>')
+              inject = '''\n<!-- APP_INTEGRATION_LAYER -->\n<script src="firebase-config.js"></script>\n<script type="module" src="app-cloud.js"></script>\n<script src="qr-validation.js"></script>\n'''
+              old_marker = '<!-- FIREBASE_CLOUD_LAYER -->'
+              if old_marker in s:
+                  start = s.index(old_marker)
+                  end = s.find('</body>', start)
+                  s = s[:start] + inject + s[end:]
+              else:
+                  s = s.replace('</body>', inject + '</body>')
+              p.write_text(s, encoding='utf-8')
+          elif 'qr-validation.js' not in s:
+              s = s.replace('</body>', '<script src="qr-validation.js"></script>\n</body>')
               p.write_text(s, encoding='utf-8')
           PY
       - name: Guardar alteração
@@ -29,5 +38,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Ligar camada Firebase ao index"
+          git commit -m "Ligar camada Firebase e QR ao index"
           git push
