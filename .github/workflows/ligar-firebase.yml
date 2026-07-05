@@ -1,4 +1,4 @@
-name: Ligar Firebase e QR ao index
+name: Ligar Firebase, QR e Drive ao index
 on:
   push:
     branches: [main]
@@ -17,20 +17,29 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
+          scripts = [
+              '<script src="firebase-config.js"></script>',
+              '<script type="module" src="app-cloud.js"></script>',
+              '<script type="module" src="cloud-bridge.js?v=20260705-1"></script>',
+              '<script src="qr-validation.js?v=20260705-3"></script>',
+              '<script src="drive-upload.js?v=20260705-1"></script>'
+          ]
           marker = '<!-- APP_INTEGRATION_LAYER -->'
           if marker not in s:
-              inject = '''\n<!-- APP_INTEGRATION_LAYER -->\n<script src="firebase-config.js"></script>\n<script type="module" src="app-cloud.js"></script>\n<script src="qr-validation.js"></script>\n'''
               old_marker = '<!-- FIREBASE_CLOUD_LAYER -->'
+              inject = '\n' + marker + '\n' + '\n'.join(scripts) + '\n'
               if old_marker in s:
                   start = s.index(old_marker)
                   end = s.find('</body>', start)
                   s = s[:start] + inject + s[end:]
               else:
                   s = s.replace('</body>', inject + '</body>')
-              p.write_text(s, encoding='utf-8')
-          elif 'qr-validation.js' not in s:
-              s = s.replace('</body>', '<script src="qr-validation.js"></script>\n</body>')
-              p.write_text(s, encoding='utf-8')
+          else:
+              for tag in scripts:
+                  filename = tag.split('src="',1)[1].split('"',1)[0].split('?')[0]
+                  if filename not in s:
+                      s = s.replace('</body>', tag + '\n</body>')
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Guardar alteração
         run: |
@@ -38,5 +47,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Ligar camada Firebase e QR ao index"
+          git commit -m "Ligar Firebase, QR e Google Drive ao index"
           git push
