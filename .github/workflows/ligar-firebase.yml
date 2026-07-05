@@ -18,6 +18,7 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
           scripts = [
+              '<script src="data-repair.js?v=20260705-1"></script>',
               '<script src="firebase-config.js"></script>',
               '<script type="module" src="app-cloud.js"></script>',
               '<script type="module" src="cloud-bridge.js?v=20260705-1"></script>',
@@ -47,5 +48,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Ligar Firebase, QR e Google Drive ao index"
+          git commit -m "Ligar reparação de dados, Firebase, QR e Google Drive"
           git push
